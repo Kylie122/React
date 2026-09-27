@@ -125,13 +125,13 @@ export default function Slots() {
           setMoney(money + betAmount * 5);
 
           setMessage(
-            ⭐ JACKPOT! You won $${betAmount * 10}!
+            '⭐ JACKPOT! You won $${betAmount * 10}!'
           );
         } else {
           setMoney(money + betAmount * 3);
 
           setMessage(
-           🎉 Three of a kind! You won $${betAmount * 5}!`
+           '🎉 Three of a kind! You won $${betAmount * 5}!'
           );
         }
       } else {
@@ -140,7 +140,7 @@ export default function Slots() {
         setMoney(money - betAmount);
 
         setMessage(
-         😢 You lost $${betAmount}.`
+         '😢 You lost $${betAmount}.'
         );
       }
 
