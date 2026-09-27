@@ -1,65 +1,78 @@
-import { View, Text, Pressable, StyleSheet } from "react-native";
-import { Link } from "expo-router";
+import { View, Text, Pressable, StyleSheet, useWindowDimensions } from "react-native";
+import { router } from "expo-router";
 import { useMoney } from "./_layout";
+
+const GAMES = [
+  { title: "Dog Fight", desc: "Bet on your fighter", icon: "🥊", route: "/dogfight" },
+  { title: "Dice", desc: "Roll the dice", icon: "🎲", route: "/dice" },
+  { title: "Slots", desc: "Spin and win", icon: "🎰", route: "/slots" },
+];
 
 export default function Home() {
   const { money } = useMoney();
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 768;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>🐶</Text>
+      <View style={[styles.content, { maxWidth: isDesktop ? 1020 : 480 }]}>
+        <View style={styles.header}>
+          <View style={[styles.logoBadge, isDesktop && styles.logoBadgeDesk]}>
+            <Text style={{ fontSize: isDesktop ? 46 : 36 }}>🐶</Text>
+          </View>
+          <Text style={[styles.title, isDesktop && { fontSize: 36 }]}>DOG CASINO</Text>
+          <Text style={styles.subtitle}>Play • Bet • Win</Text>
+        </View>
 
-      <Text style={styles.title}>DOG CASINO</Text>
-      <Text style={styles.subtitle}>Play • Bet • Win</Text>
+        <View style={[styles.moneyCard, isDesktop && styles.moneyCardDesk]}>
+          <View style={styles.moneyHeader}>
+            <View style={styles.indicator} />
+            <Text style={styles.moneyLabel}>YOUR BALANCE</Text>
+          </View>
+          <Text style={[styles.moneyText, isDesktop && { fontSize: 48 }]}>${money}</Text>
+        </View>
 
-      <View style={styles.moneyCard}>
-        <Text style={styles.moneyLabel}>YOUR BALANCE</Text>
-        <Text style={styles.money}>${money}</Text>
+        <Text style={styles.sectionHeader}>SELECT GAME</Text>
+
+        <View style={[styles.gamesGroup, isDesktop && styles.gamesGroupDesk]}>
+          {GAMES.map((game) => (
+            <Pressable
+              key={game.route}
+              onPress={() => router.push(game.route as any)}
+              style={({ pressed }) => [
+                styles.card,
+                isDesktop && styles.cardDesk,
+                pressed && styles.pressed,
+              ]}
+            >
+              <View style={[styles.iconBox, isDesktop && styles.iconBoxDesk]}>
+                <Text style={{ fontSize: isDesktop ? 30 : 24 }}>{game.icon}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.cardTitle, isDesktop && { fontSize: 20 }]}>{game.title}</Text>
+                <Text style={[styles.cardDesc, isDesktop && { fontSize: 14, marginTop: 4 }]}>
+                  {game.desc}
+                </Text>
+              </View>
+              <Text style={styles.arrow}>›</Text>
+            </Pressable>
+          ))}
+
+          <Pressable
+            onPress={() => router.push("/stats")}
+            style={({ pressed }) => [
+              styles.statsBtn,
+              isDesktop && styles.statsBtnDesk,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={{ fontSize: isDesktop ? 22 : 18, marginRight: 8 }}>📊</Text>
+            <Text style={[styles.statsText, isDesktop && { fontSize: 18 }]}>Statistics</Text>
+          </Pressable>
+        </View>
+
+        <Text style={styles.footer}>Good luck, player!</Text>
       </View>
-
-      <View style={styles.games}>
-        <Link href="/dogfight" asChild>
-          <Pressable style={styles.gameCard}>
-            <Text style={styles.gameIcon}>🥊</Text>
-            <View>
-              <Text style={styles.gameTitle}>Dog Fight</Text>
-              <Text style={styles.gameDescription}>Bet on your fighter</Text>
-            </View>
-            <Text style={styles.arrow}>›</Text>
-          </Pressable>
-        </Link>
-
-        <Link href="/dice" asChild>
-          <Pressable style={styles.gameCard}>
-            <Text style={styles.gameIcon}>🎲</Text>
-            <View>
-              <Text style={styles.gameTitle}>Dice</Text>
-              <Text style={styles.gameDescription}>Roll the dice</Text>
-            </View>
-            <Text style={styles.arrow}>›</Text>
-          </Pressable>
-        </Link>
-
-        <Link href="/slots" asChild>
-          <Pressable style={styles.gameCard}>
-            <Text style={styles.gameIcon}>🎰</Text>
-            <View>
-              <Text style={styles.gameTitle}>Slots</Text>
-              <Text style={styles.gameDescription}>Spin and win</Text>
-            </View>
-            <Text style={styles.arrow}>›</Text>
-          </Pressable>
-        </Link>
-
-        <Link href="/stats" asChild>
-          <Pressable style={styles.statsButton}>
-            <Text style={styles.statsIcon}>📊</Text>
-            <Text style={styles.statsText}>Statistics</Text>
-          </Pressable>
-        </Link>
-      </View>
-
-      <Text style={styles.footer}>Good luck, player!</Text>
     </View>
   );
 }
@@ -67,120 +80,184 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#111111",
+    backgroundColor: "#0B0B0E",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 35,
+  },
+  content: {
+    width: "100%",
     paddingHorizontal: 20,
-    paddingTop: 55,
+    alignItems: "stretch",
   },
-
-  logo: {
-    fontSize: 45,
-    textAlign: "center",
-    marginBottom: 5,
+  header: {
+    alignItems: "center",
+    marginBottom: 24,
   },
-
+  logoBadge: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: "#1A1A22",
+    borderWidth: 1,
+    borderColor: "#F5C54233",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  logoBadgeDesk: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+  },
   title: {
     color: "#F5C542",
-    fontSize: 30,
-    fontWeight: "bold",
+    fontSize: 28,
+    fontWeight: "900",
     textAlign: "center",
-    letterSpacing: 2,
+    letterSpacing: 3,
   },
-
   subtitle: {
-    color: "#888888",
-    fontSize: 15,
-    textAlign: "center",
-    marginTop: 5,
-    marginBottom: 25,
+    color: "#6E6E7A",
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: 6,
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
   },
-
   moneyCard: {
-    backgroundColor: "#1C1C1C",
+    width: "100%",
+    backgroundColor: "#14141B",
     borderWidth: 1,
-    borderColor: "#3A3A3A",
-    borderRadius: 18,
-    paddingVertical: 18,
+    borderColor: "#F5C54240",
+    borderRadius: 20,
+    paddingVertical: 20,
+    paddingHorizontal: 24,
     alignItems: "center",
-    marginBottom: 25,
+    marginBottom: 24,
   },
-
+  moneyCardDesk: {
+    paddingVertical: 28,
+    borderRadius: 24,
+  },
+  moneyHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  indicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#4CAF50",
+    marginRight: 6,
+  },
   moneyLabel: {
-    color: "#888888",
+    color: "#8E8E9A",
     fontSize: 12,
-    fontWeight: "bold",
-    letterSpacing: 1,
+    fontWeight: "800",
+    letterSpacing: 1.5,
   },
-
-  money: {
+  moneyText: {
     color: "#F5C542",
-    fontSize: 32,
-    fontWeight: "bold",
-    marginTop: 5,
+    fontSize: 36,
+    fontWeight: "800",
   },
-
-  games: {
-    gap: 12,
+  sectionHeader: {
+    color: "#52525E",
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+    marginBottom: 14,
+    textAlign: "center",
   },
-
-  gameCard: {
-    backgroundColor: "#1C1C1C",
-    borderRadius: 16,
+  gamesGroup: {
+    width: "100%",
+    gap: 14,
+  },
+  gamesGroupDesk: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    gap: 18,
+  },
+  card: {
+    width: "100%",
+    backgroundColor: "#14141B",
+    borderRadius: 18,
     padding: 16,
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#2D2D2D",
+    borderColor: "#22222E",
   },
-
-  gameIcon: {
-    fontSize: 32,
-    marginRight: 15,
+  cardDesk: {
+    width: "31.8%",
+    padding: 22,
+    borderRadius: 22,
   },
-
-  gameTitle: {
+  pressed: {
+    backgroundColor: "#1C1C26",
+    borderColor: "#F5C54260",
+    transform: [{ scale: 0.98 }],
+  },
+  iconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "#1F1F2B",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  iconBoxDesk: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    marginRight: 18,
+  },
+  cardTitle: {
     color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: 17,
+    fontWeight: "700",
   },
-
-  gameDescription: {
-    color: "#777777",
-    fontSize: 13,
-    marginTop: 3,
+  cardDesc: {
+    color: "#71717A",
+    fontSize: 12,
+    marginTop: 2,
   },
-
   arrow: {
     color: "#F5C542",
-    fontSize: 30,
-    marginLeft: "auto",
+    fontSize: 24,
+    fontWeight: "300",
+    paddingLeft: 8,
   },
-
-  statsButton: {
-    backgroundColor: "#252525",
+  statsBtn: {
+    width: "100%",
+    backgroundColor: "#1C1C26",
     borderRadius: 16,
-    padding: 16,
+    paddingVertical: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 3,
+    borderWidth: 1,
+    borderColor: "#2A2A38",
   },
-
-  statsIcon: {
-    fontSize: 20,
-    marginRight: 8,
+  statsBtnDesk: {
+    paddingVertical: 22,
+    borderRadius: 22,
+    marginTop: 6,
   },
-
   statsText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
+    color: "#E4E4E7",
+    fontSize: 15,
+    fontWeight: "700",
   },
-
   footer: {
-    color: "#555555",
+    color: "#42424D",
     textAlign: "center",
-    marginTop: "auto",
-    marginBottom: 25,
+    marginTop: 32,
     fontSize: 13,
+    fontWeight: "600",
   },
 });
