@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Modal,
   Pressable,
@@ -7,7 +8,6 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { useEffect, useState } from "react";
 import { useMoney } from "./_layout";
 
 export default function Dogfight() {
@@ -73,6 +73,20 @@ export default function Dogfight() {
       setMessage(`😢 You lost $${betAmount}.`);
     }
   }, [winner, selectedDog, bet, recordDogfight, setMoney]);
+
+  const addBet = (amount: number) => {
+    const current = Number(bet) || 0;
+    const updated = current + amount;
+    if (updated <= money) {
+      setBet(updated.toString());
+    } else {
+      setBet(money.toString());
+    }
+  };
+
+  const setMaxBet = () => {
+    setBet(money.toString());
+  };
 
   const startFight = () => {
     const betAmount = Number(bet);
@@ -242,6 +256,53 @@ export default function Dogfight() {
             placeholderTextColor="#666666"
             editable={!fighting}
           />
+
+          <View style={styles.presetRow}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.presetButton,
+                fighting && styles.disabledButton,
+                pressed && !fighting && styles.pressed,
+              ]}
+              onPress={() => addBet(10)}
+              disabled={fighting}
+            >
+              <Text style={styles.presetText}>+$10</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.presetButton,
+                fighting && styles.disabledButton,
+                pressed && !fighting && styles.pressed,
+              ]}
+              onPress={() => addBet(50)}
+              disabled={fighting}
+            >
+              <Text style={styles.presetText}>+$50</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.presetButton,
+                fighting && styles.disabledButton,
+                pressed && !fighting && styles.pressed,
+              ]}
+              onPress={() => addBet(100)}
+              disabled={fighting}
+            >
+              <Text style={styles.presetText}>+$100</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.presetButtonMax,
+                fighting && styles.disabledButton,
+                pressed && !fighting && styles.pressed,
+              ]}
+              onPress={setMaxBet}
+              disabled={fighting}
+            >
+              <Text style={styles.presetTextMax}>MAX</Text>
+            </Pressable>
+          </View>
 
           {fightMessage !== "" && (
             <Text style={[styles.fightMessage, isDesktop && { fontSize: 16 }]}>
@@ -506,6 +567,38 @@ const styles = StyleSheet.create({
   inputDesk: {
     paddingVertical: 14,
     fontSize: 18,
+  },
+  presetRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 12,
+    width: "100%",
+  },
+  presetButton: {
+    flex: 1,
+    backgroundColor: "#1C1C26",
+    borderWidth: 1,
+    borderColor: "#2A2A38",
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  presetText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  presetButtonMax: {
+    flex: 1,
+    backgroundColor: "#F5C542",
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  presetTextMax: {
+    color: "#0B0B0E",
+    fontSize: 12,
+    fontWeight: "800",
   },
   fightMessage: {
     color: "#F5C542",
