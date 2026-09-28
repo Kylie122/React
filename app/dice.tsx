@@ -1,119 +1,164 @@
-import {
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
-} from "react-native";
-
 import { useState } from "react";
+import {
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import { useMoney } from "./_layout";
 
 export default function Dice() {
   const { money, setMoney, recordDiceRoll } = useMoney();
 
-  const [dice, setDice] = useState(1);
+  const [dice, setDice] = useState<number | null>(null);
   const [bet, setBet] = useState("");
-  const [message, setMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [lastWin, setLastWin] = useState<boolean | null>(null);
+  const [resultAmount, setResultAmount] = useState(0);
 
   const rollDice = () => {
     const betAmount = Number(bet);
 
-    if (betAmount <= 0) {
-      setMessage("Enter a valid bet.");
+    if (isNaN(betAmount) || betAmount <= 0) {
+      setErrorMessage("Enter a valid bet amount.");
       return;
     }
 
     if (betAmount > money) {
-      setMessage("You don't have enough money.");
+      setErrorMessage("Insufficient balance.");
       return;
     }
 
-    const roll = Math.floor(Math.random() * 6) + 1;
+    setErrorMessage("");
 
+    const roll = Math.floor(Math.random() * 6) + 1;
     setDice(roll);
 
-    recordDiceRoll(roll === 6, roll === 6);
+    const won = roll === 6;
+    recordDiceRoll(won, won);
 
-    if (roll === 6) {
-      setMoney(money + betAmount * 5);
-      setMessage(`🎉 You won $${betAmount * 5}!`);
+    if (won) {
+      const winGain = betAmount * 5;
+      setMoney(money + winGain);
+      setLastWin(true);
+      setResultAmount(winGain);
     } else {
       setMoney(money - betAmount);
-      setMessage(`😢 You lost $${betAmount}.`);
+      setLastWin(false);
+      setResultAmount(betAmount);
     }
+
+    setShowModal(true);
+  };
+
+  const addBet = (amount: number) => {
+    const current = Number(bet) || 0;
+    const updated = current + amount;
+    if (updated <= money) {
+      setBet(updated.toString());
+    } else {
+      setBet(money.toString());
+    }
+  };
+
+  const setMaxBet = () => {
+    setBet(money.toString());
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🎲 DICE</Text>
+      <View style={styles.wrapper}>
+        <Text style={styles.title}>🎲 LUCKY DICE</Text>
+        <Text style={styles.subtitle}>Roll a 6 to multiply your bet by 5x</Text>
 
-      <Text style={styles.subtitle}>
-        Roll the lucky number
-      </Text>
-
-      <View style={styles.moneyCard}>
-        <Text style={styles.moneyLabel}>YOUR BALANCE</Text>
-        <Text style={styles.money}>${money}</Text>
-      </View>
-
-      <View style={styles.diceCard}>
-        <Text style={styles.diceLabel}>YOUR ROLL</Text>
-
-        <View style={styles.diceBox}>
-          <Text style={styles.dice}>{dice}</Text>
+        <View style={styles.moneyCard}>
+          <Text style={styles.moneyLabel}>YOUR BALANCE</Text>
+          <Text style={styles.money}>${money.toLocaleString()}</Text>
         </View>
 
-        <Text style={styles.instruction}>
-          Roll a 6 to win!
-        </Text>
+        <View style={styles.gameCard}>
+          <Text style={styles.cardLabel}>YOUR ROLL</Text>
 
-        <Text style={styles.payout}>
-          WIN ×5
-        </Text>
+          <View style={styles.diceBox}>
+            <Text style={styles.diceText}>{dice !== null ? dice : "?"}</Text>
+          </View>
+
+          <View style={styles.payoutBadge}>
+            <Text style={styles.payoutText}>WIN 5× BET</Text>
+          </View>
+        </View>
+
+        <View style={styles.betCard}>
+          <Text style={styles.betTitle}>PLACE YOUR BET</Text>
+
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={bet}
+            onChangeText={setBet}
+            placeholder="0"
+            placeholderTextColor="#555566"
+          />
+
+          <View style={styles.presetRow}>
+            <Pressable style={styles.presetButton} onPress={() => addBet(10)}>
+              <Text style={styles.presetText}>+$10</Text>
+            </Pressable>
+            <Pressable style={styles.presetButton} onPress={() => addBet(50)}>
+              <Text style={styles.presetText}>+$50</Text>
+            </Pressable>
+            <Pressable style={styles.presetButton} onPress={() => addBet(100)}>
+              <Text style={styles.presetText}>+$100</Text>
+            </Pressable>
+            <Pressable style={styles.presetButtonMax} onPress={setMaxBet}>
+              <Text style={styles.presetTextMax}>MAX</Text>
+            </Pressable>
+          </View>
+
+          {errorMessage !== "" && (
+            <Text style={styles.errorText}>{errorMessage}</Text>
+          )}
+
+          <Pressable style={styles.rollButton} onPress={rollDice}>
+            <Text style={styles.rollButtonText}>🎲 ROLL DICE</Text>
+          </Pressable>
+        </View>
       </View>
 
-      <View style={styles.betCard}>
-        <Text style={styles.betTitle}>PLACE YOUR BET</Text>
-
-        <TextInput
-          style={styles.input}
-          keyboardType="numeric"
-          value={bet}
-          onChangeText={setBet}
-          placeholder="Enter bet amount"
-          placeholderTextColor="#666666"
-        />
-
-        <Pressable
-          style={styles.rollButton}
-          onPress={rollDice}
-        >
-          <Text style={styles.rollButtonText}>
-            🎲 ROLL DICE
-          </Text>
-        </Pressable>
-      </View>
-
-      {message !== "" && (
-        <View
-          style={[
-            styles.messageBox,
-            message.includes("won") && styles.winBox,
-            message.includes("lost") && styles.lossBox,
-          ]}
-        >
-          <Text
+      <Modal visible={showModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View
             style={[
-              styles.message,
-              message.includes("won") && styles.winMessage,
-              message.includes("lost") && styles.lossMessage,
+              styles.modalCard,
+              lastWin ? styles.winBorder : styles.lossBorder,
             ]}
           >
-            {message}
-          </Text>
+            <Text style={styles.modalEmoji}>{lastWin ? "🎉" : "💔"}</Text>
+            <Text
+              style={[
+                styles.modalTitle,
+                lastWin ? styles.winTitle : styles.lossTitle,
+              ]}
+            >
+              {lastWin ? "YOU WON!" : "YOU LOST"}
+            </Text>
+            <Text style={styles.modalDiceText}>You rolled a {dice}</Text>
+            <Text style={styles.modalAmount}>
+              {lastWin ? `+$${resultAmount}` : `-$${resultAmount}`}
+            </Text>
+
+            <Pressable
+              style={styles.modalButton}
+              onPress={() => setShowModal(false)}
+            >
+              <Text style={styles.modalButtonText}>PLAY AGAIN</Text>
+            </Pressable>
+          </View>
         </View>
-      )}
+      </Modal>
     </View>
   );
 }
@@ -121,175 +166,242 @@ export default function Dice() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#111111",
+    backgroundColor: "#0B0B0E",
     paddingHorizontal: 20,
-    paddingTop: 25,
+    paddingTop: 24,
+    paddingBottom: 30,
+    alignItems: "center",
+    justifyContent: "flex-start",
+  },
+  wrapper: {
+    width: "100%",
+    maxWidth: 680,
     alignItems: "center",
   },
-
   title: {
     color: "#F5C542",
-    fontSize: 30,
+    fontSize: 32,
     fontWeight: "bold",
     letterSpacing: 2,
   },
-
   subtitle: {
-    color: "#777777",
+    color: "#8E8E9F",
     fontSize: 14,
     marginTop: 4,
-    marginBottom: 18,
+    marginBottom: 20,
+    textAlign: "center",
   },
-
   moneyCard: {
-    backgroundColor: "#1C1C1C",
+    backgroundColor: "#16161E",
     borderWidth: 1,
-    borderColor: "#3A3A3A",
-    borderRadius: 15,
+    borderColor: "#222230",
+    borderRadius: 16,
     width: "100%",
     alignItems: "center",
-    paddingVertical: 11,
-    marginBottom: 15,
+    paddingVertical: 16,
+    marginBottom: 16,
   },
-
   moneyLabel: {
-    color: "#777777",
-    fontSize: 10,
+    color: "#8E8E9F",
+    fontSize: 12,
     fontWeight: "bold",
     letterSpacing: 1,
   },
-
   money: {
     color: "#F5C542",
-    fontSize: 26,
-    fontWeight: "bold",
-    marginTop: 2,
-  },
-
-  diceCard: {
-    backgroundColor: "#1C1C1C",
-    borderWidth: 1,
-    borderColor: "#2D2D2D",
-    borderRadius: 18,
-    width: "100%",
-    alignItems: "center",
-    paddingVertical: 18,
-    marginBottom: 15,
-  },
-
-  diceLabel: {
-    color: "#888888",
-    fontSize: 11,
-    fontWeight: "bold",
-    letterSpacing: 1,
-    marginBottom: 10,
-  },
-
-  diceBox: {
-    width: 105,
-    height: 105,
-    backgroundColor: "#F5C542",
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  dice: {
-    color: "#111111",
-    fontSize: 65,
-    fontWeight: "bold",
-  },
-
-  instruction: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginTop: 12,
-  },
-
-  payout: {
-    color: "#4CAF50",
-    fontSize: 13,
+    fontSize: 30,
     fontWeight: "bold",
     marginTop: 4,
   },
-
-  betCard: {
-    backgroundColor: "#1C1C1C",
+  gameCard: {
+    backgroundColor: "#16161E",
     borderWidth: 1,
-    borderColor: "#2D2D2D",
-    borderRadius: 18,
+    borderColor: "#222230",
+    borderRadius: 20,
     width: "100%",
     alignItems: "center",
-    padding: 1
+    paddingVertical: 24,
+    marginBottom: 16,
   },
-
+  cardLabel: {
+    color: "#8E8E9F",
+    fontSize: 12,
+    fontWeight: "bold",
+    letterSpacing: 1,
+    marginBottom: 14,
+  },
+  diceBox: {
+    width: 110,
+    height: 110,
+    backgroundColor: "#F5C542",
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#F5C542",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  diceText: {
+    color: "#0B0B0E",
+    fontSize: 64,
+    fontWeight: "bold",
+  },
+  payoutBadge: {
+    backgroundColor: "#222230",
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 18,
+    borderWidth: 1,
+    borderColor: "#F5C542",
+  },
+  payoutText: {
+    color: "#F5C542",
+    fontSize: 13,
+    fontWeight: "bold",
+    letterSpacing: 1,
+  },
+  betCard: {
+    backgroundColor: "#16161E",
+    borderWidth: 1,
+    borderColor: "#222230",
+    borderRadius: 20,
+    width: "100%",
+    alignItems: "center",
+    padding: 20,
+  },
   betTitle: {
     color: "#F5C542",
     fontSize: 13,
     fontWeight: "bold",
     letterSpacing: 1,
-    marginBottom: 10,
+    marginBottom: 14,
   },
-
   input: {
-    backgroundColor: "#111111",
+    backgroundColor: "#0B0B0E",
     borderWidth: 1,
-    borderColor: "#3A3A3A",
-    borderRadius: 9,
+    borderColor: "#222230",
+    borderRadius: 12,
     color: "#FFFFFF",
-    width: "80%",
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    width: "100%",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     textAlign: "center",
-    fontSize: 16,
+    fontSize: 20,
+    fontWeight: "bold",
   },
-
-  rollButton: {
-    backgroundColor: "#F5C542",
-    width: "80%",
+  presetRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
+    width: "100%",
+  },
+  presetButton: {
+    flex: 1,
+    backgroundColor: "#222230",
+    paddingVertical: 10,
     borderRadius: 10,
-    paddingVertical: 12,
     alignItems: "center",
+  },
+  presetText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "bold",
+  },
+  presetButtonMax: {
+    flex: 1,
+    backgroundColor: "#F5C542",
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  presetTextMax: {
+    color: "#0B0B0E",
+    fontSize: 13,
+    fontWeight: "bold",
+  },
+  errorText: {
+    color: "#E75E5E",
+    fontSize: 13,
+    fontWeight: "bold",
     marginTop: 12,
   },
-
-  rollButtonText: {
-    color: "#111111",
-    fontSize: 15,
-    fontWeight: "bold",
-  },
-
-  messageBox: {
+  rollButton: {
+    backgroundColor: "#F5C542",
     width: "100%",
     borderRadius: 12,
-    padding: 12,
+    paddingVertical: 16,
     alignItems: "center",
-    marginTop: 15,
-    backgroundColor: "#1C1C1C",
+    marginTop: 16,
   },
-
-  winBox: {
-    borderWidth: 1,
-    borderColor: "#4CAF50",
+  rollButtonText: {
+    color: "#0B0B0E",
+    fontSize: 17,
+    fontWeight: "bold",
+    letterSpacing: 1,
   },
-
-  lossBox: {
-    borderWidth: 1,
-    borderColor: "#E74C3C",
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.85)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
   },
-
-  message: {
+  modalCard: {
+    backgroundColor: "#16161E",
+    borderRadius: 24,
+    padding: 24,
+    width: "100%",
+    maxWidth: 440,
+    alignItems: "center",
+  },
+  winBorder: {
+    borderWidth: 2,
+    borderColor: "#4EAE62",
+  },
+  lossBorder: {
+    borderWidth: 2,
+    borderColor: "#E75E5E",
+  },
+  modalEmoji: {
+    fontSize: 52,
+    marginBottom: 8,
+  },
+  modalTitle: {
+    fontSize: 26,
+    fontWeight: "bold",
+    letterSpacing: 1,
+  },
+  winTitle: {
+    color: "#4EAE62",
+  },
+  lossTitle: {
+    color: "#E75E5E",
+  },
+  modalDiceText: {
+    color: "#8E8E9F",
+    fontSize: 15,
+    marginTop: 6,
+  },
+  modalAmount: {
     color: "#FFFFFF",
+    fontSize: 34,
+    fontWeight: "bold",
+    marginVertical: 12,
+  },
+  modalButton: {
+    backgroundColor: "#F5C542",
+    width: "100%",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  modalButtonText: {
+    color: "#0B0B0E",
     fontSize: 16,
     fontWeight: "bold",
-  },
-
-  winMessage: {
-    color: "#4CAF50",
-  },
-
-  lossMessage: {
-    color: "#E74C3C",
   },
 });
